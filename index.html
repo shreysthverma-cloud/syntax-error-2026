@@ -21,7 +21,124 @@ syntax.html
     <link rel="preload" as="image" href="https://i.postimg.cc/9fFbRtt9/background.jpg">
     <link rel="preload" as="image" href="https://i.postimg.cc/zBTyq4bF/background-red.jpg">
     <style>
+      body {
+            margin: 0;
+            padding: 30px 0;
+            min-height: 100vh;
+            box-sizing: border-box;
+            background-color: #2b2b2b;
+            background-image: url('background.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            color: white;
+            font-family: monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 {
+            color: #1a0933;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.9), 0 2px 4px rgba(0, 0, 0, 0.2);
+            margin-top: 0;
+            margin-bottom: 15px;
+            letter-spacing: 1.5px;
+        }
+        #header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 600px;
+            margin-bottom: 12px;
+            background-color: rgba(0, 0, 0, 0.75);
+            padding: 8px 16px;
+            border-radius: 6px;
+            box-sizing: border-box;
+            border: 1px solid #333;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+        #score-board { font-size: 24px; font-weight: bold; color: #00ffff; }
+        #lives-board { font-size: 24px; font-weight: bold; color: #ff3366; letter-spacing: 2px; }
+        #level-board { font-size: 24px; font-weight: bold; color: #ff00ff; }
+        #mute-btn {
+            background: transparent;
+            border: 1px solid #555;
+            color: white;
+            font-size: 20px;
+            padding: 2px 8px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+        #mute-btn:hover {
+            border-color: #00ffff;
+            background-color: #333;
+        }
+        #game-board {
+            width: 600px;
+            height: 400px;
+            background-color: #000000;
+            position: relative;
+            border: 2px solid #333;
+            border-radius: 6px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+            overflow: hidden;
+        }
+        .zombie {
+            position: absolute;
+            color: #ffffff;
+            font-weight: 800;
+            font-size: 22px;
+            letter-spacing: 1px;
+            transition: top 0.5s linear;
+            user-select: none;
+        }
+        #typing-area { margin-top: 20px; }
+        input {
+            font-size: 20px;
+            padding: 6px 14px;
+            text-align: center;
+            background-color: #1a1a1a;
+            color: white;
+            border: 2px solid #555;
+            border-radius: 6px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        input:focus {
+            outline: none;
+            border-color: #00ff00;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        }
+        .input-error {
+            border-color: #ff3366 !important;
+            animation: shake 0.2s ease-in-out;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-6px); }
+            75% { transform: translateX(6px); }
+        }
         
+        /* Game Over Screen */
+        #game-over-screen {
+            display: none;
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+        #game-over-screen h1 { color: red; font-size: 40px; margin-bottom: 10px; }
+        #game-over-screen button {
+            margin-top: 20px; padding: 10px 20px; font-size: 18px;
+            background-color: #00ff00; color: black; border: none; font-weight: bold; cursor: pointer;
+        }
+  
     </style>
 </head>
 <body>
@@ -53,6 +170,327 @@ syntax.html
     </div>
 
     <script>
+        const gameBoard = document.getElementById('game-board');
+        const wordInput = document.getElementById('word-input');
+        const scoreBoard = document.getElementById('score-board');
+        const livesBoard = document.getElementById('lives-board');
+        const levelBoard = document.getElementById('level-board');
+        const muteBtn = document.getElementById('mute-btn');
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const finalScoreText = document.getElementById('final-score-text');
+        
+        // Sound Manager configured for your local files with smart fallback
+        const SoundManager = {
+            muted: localStorage.getItem('sound_muted') === 'true',
+            audioContext: null,
+
+            // Local audio files: drop your MP3 files with these names into this directory
+            sounds: {
+                correct: new Audio('correct.mp3'),
+                wrong: new Audio('wrong.mp3'),
+                hit: new Audio('hit.mp3'),
+                levelUp: new Audio('levelup.mp3'),
+                gameOver: new Audio('gameover.mp3')
+            },
+
+            // Fallback URLs used automatically if any local file is missing
+            backupUrls: {
+                correct: 'https://assets.mixkit.co/active_storage/sfx/2068/2068-preview.mp3',
+                wrong: 'https://assets.mixkit.co/active_storage/sfx/2908/2908-preview.mp3',
+                hit: 'https://s3.amazonaws.com/freecodecamp/drums/punchy_kick_1.mp3',
+                levelUp: 'https://s3.amazonaws.com/freecodecamp/drums/Chord_1.mp3',
+                gameOver: 'https://assets.mixkit.co/active_storage/sfx/1133/1133-preview.mp3'
+            },
+
+            init() {
+                Object.values(this.sounds).forEach(audio => {
+                    audio.preload = 'auto';
+                });
+            },
+
+            getAudioContext() {
+                if (!this.audioContext) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtx) this.audioContext = new AudioCtx();
+                }
+                if (this.audioContext && this.audioContext.state === 'suspended') {
+                    this.audioContext.resume();
+                }
+                return this.audioContext;
+            },
+
+            playFallback(name) {
+                try {
+                    const ctx = this.getAudioContext();
+                    if (!ctx) return;
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    const now = ctx.currentTime;
+
+                    if (name === 'correct') {
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(523.25, now);
+                        osc.frequency.exponentialRampToValueAtTime(783.99, now + 0.15);
+                        gain.gain.setValueAtTime(0.2, now);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                        osc.start(now);
+                        osc.stop(now + 0.2);
+                    } else if (name === 'wrong') {
+                        osc.type = 'sawtooth';
+                        osc.frequency.setValueAtTime(150, now);
+                        osc.frequency.linearRampToValueAtTime(80, now + 0.25);
+                        gain.gain.setValueAtTime(0.3, now);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                        osc.start(now);
+                        osc.stop(now + 0.25);
+                    } else if (name === 'hit') {
+                        osc.type = 'square';
+                        osc.frequency.setValueAtTime(120, now);
+                        osc.frequency.exponentialRampToValueAtTime(30, now + 0.3);
+                        gain.gain.setValueAtTime(0.4, now);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                        osc.start(now);
+                        osc.stop(now + 0.3);
+                    } else if (name === 'levelUp') {
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(440, now);
+                        osc.frequency.setValueAtTime(554.37, now + 0.1);
+                        osc.frequency.setValueAtTime(659.25, now + 0.2);
+                        osc.frequency.setValueAtTime(880, now + 0.3);
+                        gain.gain.setValueAtTime(0.2, now);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.45);
+                        osc.start(now);
+                        osc.stop(now + 0.45);
+                    } else if (name === 'gameOver') {
+                        osc.type = 'sawtooth';
+                        osc.frequency.setValueAtTime(300, now);
+                        osc.frequency.exponentialRampToValueAtTime(50, now + 0.6);
+                        gain.gain.setValueAtTime(0.3, now);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+                        osc.start(now);
+                        osc.stop(now + 0.6);
+                    }
+                } catch (e) {
+                    console.error('Audio fallback error:', e);
+                }
+            },
+
+            play(name) {
+                if (this.muted) return;
+                const sound = this.sounds[name];
+                if (sound) {
+                    sound.currentTime = 0;
+                    sound.play().catch(() => {
+                        // If local file not found or still loading, use backup or synth
+                        if (this.backupUrls && this.backupUrls[name]) {
+                            const backupAudio = new Audio(this.backupUrls[name]);
+                            backupAudio.play().catch(() => this.playFallback(name));
+                        } else {
+                            this.playFallback(name);
+                        }
+                    });
+                } else {
+                    this.playFallback(name);
+                }
+            },
+
+            toggleMute() {
+                this.muted = !this.muted;
+                localStorage.setItem('sound_muted', this.muted);
+                return this.muted;
+            }
+        };
+
+        SoundManager.init();
+
+        function updateMuteButtonUI() {
+            muteBtn.innerText = SoundManager.muted ? '🔇' : '🔊';
+        }
+        muteBtn.addEventListener('click', () => {
+            SoundManager.toggleMute();
+            updateMuteButtonUI();
+        });
+        updateMuteButtonUI();
+
+        // Gradual Difficulty Tiers (Length & Complexity)
+        const tier1 = ["if", "do", "go", "is", "it", "to", "var", "let", "bug", "run", "git", "api", "css", "log", "int", "dom", "tag", "pop", "new", "key", "set", "map", "del", "try", "for"];
+        const tier2 = ["code", "loop", "data", "byte", "file", "node", "push", "pull", "json", "html", "react", "redux", "fetch", "array", "await", "async", "event", "class", "const", "stack", "queue", "cache", "build", "debug"];
+        const tier3 = ["python", "script", "server", "docker", "commit", "branch", "object", "string", "number", "router", "method", "module", "render", "deploy", "packet", "socket", "binary", "syntax"];
+        const tier4 = ["function", "variable", "database", "terminal", "frontend", "backend", "compiler", "callback", "promise", "algorithm", "recursive", "framework", "middleware", "interface", "prototype"];
+
+        let activeWords = [...tier1]; // Starts with short/easy words
+        let usedWords = new Set();
+        const wordColors = [
+            "#00ff88", // Bright Mint Green
+            "#00d9ff", // Electric Cyan
+            "#ff3366", // Neon Rose
+            "#ffcc00", // Bright Yellow
+            "#ff8800", // Vibrant Orange
+            "#c084fc", // Lavender Violet
+            "#ff5ea5", // Bubblegum Pink
+            "#ffffff", // Crisp White
+            "#6ee7b7", // Seafoam
+            "#38bdf8"  // Sky Blue
+        ];
+        let zombies = [];
+        
+        let score = 0;
+        let lives = 3;
+        let speedLevel = 1;
+        let spawnRate = 2000;
+        let fallSpeed = 20;
+        
+        let spawnInterval, moveInterval, difficultyInterval;
+
+        function updateLivesDisplay() {
+            livesBoard.innerText = "❤️".repeat(Math.max(0, lives)) + "🖤".repeat(Math.max(0, 3 - lives));
+        }
+
+        function triggerInputError() {
+            wordInput.classList.add('input-error');
+            setTimeout(() => {
+                wordInput.classList.remove('input-error');
+            }, 300);
+        }
+
+        function updateWordPool() {
+            if (speedLevel === 1) {
+                // Tier 1: 2-3 letter words
+                activeWords = [...tier1];
+            } else if (speedLevel === 2) {
+                // Blend: 3-letter words from Tier 1 + Tier 2 (4-5 letters)
+                activeWords = [...tier1.filter(w => w.length >= 3), ...tier2];
+            } else if (speedLevel === 3) {
+                // Tier 2: 4-5 letter words
+                activeWords = [...tier2];
+            } else if (speedLevel === 4) {
+                // Blend: Tier 2 (4-5 letters) + Tier 3 (6-7 letters)
+                activeWords = [...tier2, ...tier3];
+            } else if (speedLevel === 5) {
+                // Blend: Tier 3 (6-7 letters) + Tier 4 (8+ letters)
+                activeWords = [...tier3, ...tier4];
+            } else {
+                // Advanced: mostly Tier 4 complex terms & longest Tier 3
+                activeWords = [...tier4, ...tier3.filter(w => w.length >= 7)];
+            }
+        }
+
+        function spawnZombie() {
+            // Prevent duplicates on screen and prevent repeat until pool is exhausted
+            const onScreenWords = new Set(zombies.map(z => z.word));
+            let availableWords = activeWords.filter(w => !onScreenWords.has(w) && !usedWords.has(w));
+            
+            if (availableWords.length === 0) {
+                usedWords = new Set(onScreenWords);
+                availableWords = activeWords.filter(w => !onScreenWords.has(w) && !usedWords.has(w));
+            }
+            
+            if (availableWords.length === 0) return;
+            
+            const randomWord = availableWords[Math.floor(Math.random() * availableWords.length)];
+            usedWords.add(randomWord);
+
+            const zombieEl = document.createElement('div');
+            zombieEl.classList.add('zombie');
+            
+            const randomColor = wordColors[Math.floor(Math.random() * wordColors.length)];
+            zombieEl.innerText = randomWord;
+            zombieEl.style.color = randomColor;
+            
+            zombieEl.style.top = '0px';
+            zombieEl.style.left = Math.floor(Math.random() * 440) + 10 + 'px';
+            
+            gameBoard.appendChild(zombieEl);
+            zombies.push({ element: zombieEl, word: randomWord, yPos: 0 });
+        }
+
+        function moveZombies() {
+            for (let i = zombies.length - 1; i >= 0; i--) {
+                let z = zombies[i];
+                z.yPos += fallSpeed; 
+                z.element.style.top = z.yPos + 'px';
+
+                if (z.yPos > 380) {
+                    gameBoard.removeChild(z.element);
+                    zombies.splice(i, 1);
+                    lives--;
+                    updateLivesDisplay();
+
+                    if (lives <= 0) {
+                        endGame();
+                        return;
+                    } else {
+                        SoundManager.play('hit');
+                    }
+                }
+            }
+        }
+
+        function endGame() {
+            clearInterval(spawnInterval);
+            clearInterval(moveInterval);
+            clearInterval(difficultyInterval);
+            
+            wordInput.disabled = true; // Lock typing
+            finalScoreText.innerText = "Final Score: " + score;
+            gameOverScreen.style.display = "flex"; // Show separate window
+            SoundManager.play('gameOver');
+        }
+
+        function increaseDifficulty() {
+            speedLevel++;
+            levelBoard.innerText = "Speed: " + speedLevel + "x";
+            
+            fallSpeed += 3; 
+            updateWordPool(); 
+            SoundManager.play('levelUp');
+            
+            if (spawnRate > 800) {
+                spawnRate -= 200;
+                clearInterval(spawnInterval);
+                spawnInterval = setInterval(spawnZombie, spawnRate);
+            }
+        }
+
+        wordInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                const typedWord = wordInput.value.toLowerCase().trim();
+                if (!typedWord) return;
+
+                const zombieIndex = zombies.findIndex(z => z.word === typedWord);
+                
+                if (zombieIndex !== -1) {
+                    const z = zombies[zombieIndex];
+                    
+                    // Dynamic scoring: calculate how far down it fell
+                    // Max points: 10. Min points: 1.
+                    const distanceRatio = z.yPos / 380; 
+                    let points = Math.max(1, Math.round(10 * (1 - distanceRatio)));
+                    
+                    score += points;
+                    scoreBoard.innerText = "Score: " + score;
+                    
+                    gameBoard.removeChild(z.element);
+                    zombies.splice(zombieIndex, 1);
+                    SoundManager.play('correct');
+                } else {
+                    // Wrong spelling penalty: -10 score (can go negative)
+                    score -= 10;
+                    scoreBoard.innerText = "Score: " + score;
+                    triggerInputError();
+                    SoundManager.play('wrong');
+                }
+                
+                wordInput.value = '';
+            }
+        });
+
+        // Start loops
+        spawnInterval = setInterval(spawnZombie, spawnRate); 
+        moveInterval = setInterval(moveZombies, 500); 
+        difficultyInterval = setInterval(increaseDifficulty, 8000);
         
     </script>
 </body>
