@@ -2,6 +2,9 @@
 
 [ext_resource type="Script" uid="uid://j0jyblju0g8u" path="res://battery.gd" id="1_0ps0c"]
 
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_h2yge"]
+light_mode = 1
+
 [sub_resource type="CanvasTexture" id="CanvasTexture_3rxty"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_nyutm"]
@@ -13,6 +16,7 @@ script = ExtResource("1_0ps0c")
 [node name="Sprite2D" type="Sprite2D" parent="." unique_id=723125726]
 visible = false
 modulate = Color(0, 0.24071288, 0, 1)
+material = SubResource("CanvasItemMaterial_h2yge")
 scale = Vector2(30, 30)
 texture = SubResource("CanvasTexture_3rxty")
 
