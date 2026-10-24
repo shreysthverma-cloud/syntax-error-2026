@@ -28,6 +28,18 @@ position = Vector2(575, 336)
 [node name="Battery" parent="." unique_id=1610326271 instance=ExtResource("2_h2yge")]
 position = Vector2(309, 66)
 
+[node name="Battery5" parent="." unique_id=646905904 instance=ExtResource("2_h2yge")]
+position = Vector2(297, 541)
+
+[node name="Battery7" parent="." unique_id=557647281 instance=ExtResource("2_h2yge")]
+position = Vector2(637, 93)
+
+[node name="Battery8" parent="." unique_id=899550583 instance=ExtResource("2_h2yge")]
+position = Vector2(573, 548)
+
+[node name="Battery6" parent="." unique_id=964573859 instance=ExtResource("2_h2yge")]
+position = Vector2(372, 337)
+
 [node name="Battery3" parent="." unique_id=1686204258 instance=ExtResource("2_h2yge")]
 position = Vector2(786, 156)
 
