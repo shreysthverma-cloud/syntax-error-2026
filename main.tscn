@@ -1,0 +1,56 @@
+[gd_scene format=3 uid="uid://cqow47bch5ocs"]
+
+[ext_resource type="PackedScene" uid="uid://ckudr8chj1kgo" path="res://player.tscn" id="1_0xm2m"]
+[ext_resource type="Script" uid="uid://crtdv5djku0ij" path="res://main.gd" id="1_h2yge"]
+[ext_resource type="PackedScene" uid="uid://52fvk7udi4fs" path="res://battery.tscn" id="2_h2yge"]
+
+[sub_resource type="Environment" id="Environment_3rxty"]
+background_mode = 3
+glow_enabled = true
+glow_intensity = 1.5
+glow_strength = 1.2
+
+[sub_resource type="LabelSettings" id="LabelSettings_3rxty"]
+font_size = 125
+font_color = Color(0.82, 0.073799975, 0.111110106, 1)
+shadow_color = Color(0.20392157, 0, 0, 0)
+
+[node name="main" type="Node2D" unique_id=645384165]
+script = ExtResource("1_h2yge")
+
+[node name="ColorRect" type="ColorRect" parent="." unique_id=126489694]
+offset_right = 1150.0
+offset_bottom = 649.0
+
+[node name="player" parent="." unique_id=479722617 instance=ExtResource("1_0xm2m")]
+position = Vector2(575, 336)
+
+[node name="Battery" parent="." unique_id=1610326271 instance=ExtResource("2_h2yge")]
+position = Vector2(309, 66)
+
+[node name="Battery3" parent="." unique_id=1686204258 instance=ExtResource("2_h2yge")]
+position = Vector2(786, 156)
+
+[node name="Battery4" parent="." unique_id=33639002 instance=ExtResource("2_h2yge")]
+position = Vector2(171, 335)
+
+[node name="Battery2" parent="." unique_id=1027806744 instance=ExtResource("2_h2yge")]
+position = Vector2(1080, 415)
+
+[node name="DirectionalLight2D" type="DirectionalLight2D" parent="." unique_id=145165180]
+energy = 0.95
+blend_mode = 1
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=82432376]
+environment = SubResource("Environment_3rxty")
+
+[node name="GameOverScreen" type="CanvasLayer" parent="." unique_id=78357868]
+visible = false
+
+[node name="Label" type="Label" parent="GameOverScreen" unique_id=328326896]
+offset_left = 180.0
+offset_top = 252.0
+offset_right = 931.0
+offset_bottom = 423.0
+text = "GAME OVER!"
+label_settings = SubResource("LabelSettings_3rxty")

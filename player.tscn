@@ -1,0 +1,52 @@
+[gd_scene format=3 uid="uid://ckudr8chj1kgo"]
+
+[ext_resource type="Script" uid="uid://80kl10p8d3vr" path="res://player.gd" id="1_4flbx"]
+[ext_resource type="AudioStream" uid="uid://bp3nl80sql4qy" path="res://cute-pop-sound-effects_tfbnyJEg.mp3" id="2_onrkg"]
+
+[sub_resource type="CanvasTexture" id="CanvasTexture_nyutm"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_3rxty"]
+
+[sub_resource type="Gradient" id="Gradient_sh265"]
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_rr25o"]
+gradient = SubResource("Gradient_sh265")
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_onrkg"]
+
+[sub_resource type="CanvasTexture" id="CanvasTexture_4flbx"]
+
+[sub_resource type="Curve" id="Curve_3rxty"]
+_data = [Vector2(0.0042372867, 0.017699122), 0.0, 0.0, 0, 0]
+point_count = 1
+
+[node name="player" type="CharacterBody2D" unique_id=479722617]
+script = ExtResource("1_4flbx")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1375404148]
+texture = SubResource("CanvasTexture_nyutm")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=414571533]
+shape = SubResource("RectangleShape2D_3rxty")
+
+[node name="PointLight2D" type="PointLight2D" parent="." unique_id=410351234]
+texture = SubResource("GradientTexture2D_rr25o")
+
+[node name="BatteryTimer" type="Timer" parent="." unique_id=728945417]
+wait_time = 10.0
+one_shot = true
+autostart = true
+
+[node name="CPUParticles2D" type="CPUParticles2D" parent="." unique_id=169788248]
+material = SubResource("CanvasItemMaterial_onrkg")
+amount = 50
+texture = SubResource("CanvasTexture_4flbx")
+lifetime = 5.0
+gravity = Vector2(0, 0)
+scale_amount_min = 15.0
+scale_amount_max = 15.0
+scale_amount_curve = SubResource("Curve_3rxty")
+
+[node name="EatSound" type="AudioStreamPlayer2D" parent="." unique_id=2074983629]
+stream = ExtResource("2_onrkg")
+volume_db = 20.0
